@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ resume.personal_info.name }} — Resume</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; color: #222; line-height: 1.6; font-size: 10pt; }
+        .resume { max-width: 210mm; margin: 0 auto; padding: 32px 40px; }
+        .header { margin-bottom: 20px; }
+        .header h1 { font-size: 20pt; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+        .contact-info { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 9pt; color: #555; margin-top: 6px; }
+        .contact-info a { color: #059669; text-decoration: none; }
+        .divider { height: 1px; background: #e5e5e5; margin: 16px 0; }
+        .summary { font-size: 9.5pt; color: #444; margin-bottom: 16px; }
+        .section { margin-bottom: 18px; }
+        .section-title { font-size: 9pt; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: #059669; margin-bottom: 10px; }
+        .entry { margin-bottom: 12px; break-inside: avoid; }
+        .entry-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .entry-title { font-weight: 600; font-size: 10pt; }
+        .entry-subtitle { color: #666; font-size: 9.5pt; }
+        .entry-date { font-size: 8.5pt; color: #999; }
+        .entry-description { font-size: 9.5pt; color: #444; margin-top: 3px; }
+        .highlights { list-style: none; padding: 0; margin-top: 4px; }
+        .highlights li { font-size: 9.5pt; color: #444; padding-left: 12px; position: relative; margin-bottom: 2px; }
+        .highlights li::before { content: '–'; position: absolute; left: 0; color: #059669; }
+        .skills-line { font-size: 9.5pt; color: #333; margin-bottom: 4px; }
+        .skills-line strong { color: #111; }
+        .tech-badge { display: inline-block; font-size: 8pt; color: #059669; margin-right: 6px; }
+        .tech-badge::before { content: '#'; }
+        @media print { body { margin: 0; } print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    </style>
+</head>
+<body>
+    <div class="resume">
+        <div class="header">
+            <h1>{{ resume.personal_info.name or 'Your Name' }}</h1>
+            <div class="contact-info">
+                {% if resume.personal_info.email %}<span>{{ resume.personal_info.email }}</span>{% endif %}
+                {% if resume.personal_info.phone %}<span>{{ resume.personal_info.phone }}</span>{% endif %}
+                {% if resume.personal_info.linkedin %}<a href="{{ resume.personal_info.linkedin }}">LinkedIn</a>{% endif %}
+                {% if resume.personal_info.github %}<a href="{{ resume.personal_info.github }}">GitHub</a>{% endif %}
+                {% if resume.personal_info.website %}<a href="{{ resume.personal_info.website }}">Portfolio</a>{% endif %}
+            </div>
+        </div>
+        {% if resume.personal_info.summary %}<p class="summary">{{ resume.personal_info.summary }}</p>{% endif %}
+        <div class="divider"></div>
+        {% if resume.experience %}
+        <div class="section"><h2 class="section-title">Experience</h2>
+        {% for exp in resume.experience %}<div class="entry"><div class="entry-header"><div><span class="entry-title">{{ exp.position }}</span> <span class="entry-subtitle">· {{ exp.company }}</span></div><span class="entry-date">{{ exp.start_date }} – {{ exp.end_date or 'Present' }}</span></div>{% if exp.description %}<p class="entry-description">{{ exp.description }}</p>{% endif %}{% if exp.highlights %}<ul class="highlights">{% for h in exp.highlights %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}</div>{% endfor %}
+        </div>{% endif %}
+        {% if resume.education %}
+        <div class="section"><h2 class="section-title">Education</h2>
+        {% for edu in resume.education %}<div class="entry"><div class="entry-header"><div><span class="entry-title">{{ edu.institution }}</span><br><span class="entry-subtitle">{{ edu.degree }}{% if edu.field %} in {{ edu.field }}{% endif %}{% if edu.gpa %} · GPA: {{ edu.gpa }}{% endif %}</span></div><span class="entry-date">{{ edu.start_date }} – {{ edu.end_date or 'Present' }}</span></div></div>{% endfor %}
+        </div>{% endif %}
+        {% if resume.skills %}
+        <div class="section"><h2 class="section-title">Skills</h2>
+        {% for skill in resume.skills %}<p class="skills-line"><strong>{{ skill.category }}:</strong> {{ skill['items'] | join(', ') }}</p>{% endfor %}
+        </div>{% endif %}
+        {% if resume.projects %}
+        <div class="section"><h2 class="section-title">Projects</h2>
+        {% for p in resume.projects %}<div class="entry"><span class="entry-title">{{ p.name }}</span>{% if p.description %}<p class="entry-description">{{ p.description }}</p>{% endif %}{% if p.highlights %}<ul class="highlights">{% for h in p.highlights %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}{% if p.tech_stack %}<div style="margin-top:4px;">{% for t in p.tech_stack %}<span class="tech-badge">{{ t }}</span>{% endfor %}</div>{% endif %}</div>{% endfor %}
+        </div>{% endif %}
+        {% if resume.certifications %}
+        <div class="section"><h2 class="section-title">Certifications</h2>
+        {% for cert in resume.certifications %}<div class="entry"><div class="entry-header"><span class="entry-title">{{ cert.name }}{% if cert.issuer %} <span class="entry-subtitle">· {{ cert.issuer }}</span>{% endif %}</span>{% if cert.date %}<span class="entry-date">{{ cert.date }}</span>{% endif %}</div></div>{% endfor %}
+        </div>{% endif %}
+    </div>
+</body>
+</html>

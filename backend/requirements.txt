@@ -1,0 +1,11 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-dotenv==1.1.0
+supabase==2.15.2
+google-generativeai==0.8.5
+pydantic==2.11.3
+python-multipart==0.0.20
+weasyprint==63.1
+Jinja2==3.1.6
+PyMuPDF==1.25.5
+httpx==0.28.1
