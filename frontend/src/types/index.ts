@@ -128,7 +128,7 @@ export interface OptimizeResult {
 
 // Default empty resume
 export const defaultResume: ResumeData = {
-  title: "Untitled Resume",
+  title: "",
   personal_info: {
     name: "",
     email: "",

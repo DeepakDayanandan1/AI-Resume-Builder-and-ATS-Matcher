@@ -78,7 +78,7 @@ export default function MatcherPage() {
               </CardContent>
             </Card>
 
-            <Button onClick={handleMatch} disabled={loading} className="w-full gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/20">
+            <Button onClick={handleMatch} disabled={loading} size="lg" className="w-full gap-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/20">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitCompare className="h-4 w-4" />}
               {loading ? "Analyzing..." : "Compare Match"}
             </Button>

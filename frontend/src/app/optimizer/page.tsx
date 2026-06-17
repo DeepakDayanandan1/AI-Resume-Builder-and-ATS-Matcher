@@ -80,7 +80,7 @@ export default function OptimizerPage() {
           </Card>
         </div>
 
-        <Button onClick={handleOptimize} disabled={loading} className="w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20 mb-8">
+        <Button onClick={handleOptimize} disabled={loading} size="lg" className="w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20 mb-8">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           {loading ? "Optimizing..." : "Optimize Resume"}
         </Button>

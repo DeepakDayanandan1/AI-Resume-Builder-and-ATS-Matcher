@@ -170,16 +170,18 @@ export default function BuilderPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-white/5 p-1 mb-6">
-            {tabItems.map((t) => {
-              const Icon = t.icon;
-              return (
-                <TabsTrigger key={t.value} value={t.value} className="gap-1.5 text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
-                  <Icon className="h-3.5 w-3.5" /> {t.label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-1 -mb-1 scrollbar-none">
+            <TabsList className="flex flex-nowrap !w-max md:!w-full !justify-start md:!justify-center h-auto gap-1 bg-white/5 p-1 mb-6">
+              {tabItems.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <TabsTrigger key={t.value} value={t.value} className="gap-1.5 text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-purple-600 data-[state=active]:text-white whitespace-nowrap shrink-0">
+                    <Icon className="h-3.5 w-3.5" /> {t.label}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
 
           {/* Personal Info */}
           <TabsContent value="personal">
@@ -188,7 +190,7 @@ export default function BuilderPage() {
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div><Label>Full Name</Label><Input value={resume.personal_info.name} onChange={(e) => updatePersonal("name", e.target.value)} placeholder="John Doe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>Email</Label><Input value={resume.personal_info.email} onChange={(e) => updatePersonal("email", e.target.value)} placeholder="john@example.com" className="mt-1 bg-white/5 border-white/10" /></div>
-                <div><Label>Phone</Label><Input value={resume.personal_info.phone} onChange={(e) => updatePersonal("phone", e.target.value)} placeholder="+1 234 567 890" className="mt-1 bg-white/5 border-white/10" /></div>
+                <div><Label>Phone</Label><Input value={resume.personal_info.phone} onChange={(e) => updatePersonal("phone", e.target.value)} placeholder="+91 98765 43210" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>LinkedIn</Label><Input value={resume.personal_info.linkedin} onChange={(e) => updatePersonal("linkedin", e.target.value)} placeholder="linkedin.com/in/johndoe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>GitHub</Label><Input value={resume.personal_info.github} onChange={(e) => updatePersonal("github", e.target.value)} placeholder="github.com/johndoe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>Website</Label><Input value={resume.personal_info.website} onChange={(e) => updatePersonal("website", e.target.value)} placeholder="johndoe.com" className="mt-1 bg-white/5 border-white/10" /></div>
@@ -349,10 +351,10 @@ export default function BuilderPage() {
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-end">
-          <Button variant="outline" onClick={handleSave} disabled={loading} className="gap-2 border-white/20">
+          <Button variant="outline" onClick={handleSave} disabled={loading} size="lg" className="gap-2 border-white/20">
             <Save className="h-4 w-4" /> Save Resume
           </Button>
-          <Button onClick={handleDownloadPDF} disabled={loading} className="gap-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg shadow-cyan-500/20">
+          <Button onClick={handleDownloadPDF} disabled={loading} size="lg" className="gap-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg shadow-cyan-500/20">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download PDF
           </Button>

@@ -60,7 +60,7 @@ class Certification(BaseModel):
 
 # ── Resume ─────────────────────────────────────────────────────
 class ResumeData(BaseModel):
-    title: str = "Untitled Resume"
+    title: str = ""
     personal_info: PersonalInfo = PersonalInfo()
     education: list[Education] = []
     skills: list[SkillCategory] = []

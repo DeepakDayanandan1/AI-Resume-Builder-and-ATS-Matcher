@@ -87,7 +87,7 @@ export default function AnalyzerPage() {
               )}
             </div>
             <div className="mt-6 flex justify-center">
-              <Button onClick={handleAnalyze} disabled={!file || loading} className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 shadow-lg shadow-purple-500/20">
+              <Button onClick={handleAnalyze} disabled={!file || loading} size="lg" className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 shadow-lg shadow-purple-500/20">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
                 {loading ? "Analyzing..." : "Analyze Resume"}
               </Button>

@@ -176,7 +176,7 @@ export default function HomePage() {
             {[
               { value: "82%", label: "Avg ATS Score Improvement" },
               { value: "3", label: "Professional Templates" },
-              { value: "AI", label: "Powered by Gemini" },
+              { value: "AI", label: "Powered by Groq" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
@@ -420,16 +420,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-cyan-500" />
-            <span>ResumeAI — Built with Next.js & Gemini AI</span>
-          </div>
-          <div>© {new Date().getFullYear()} All rights reserved.</div>
-        </div>
-      </footer>
     </div>
   );
 }
