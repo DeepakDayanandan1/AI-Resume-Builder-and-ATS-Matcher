@@ -15,6 +15,9 @@ class Settings:
     # Google Gemini
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
+    # Groq (faster, higher free tier limits)
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 

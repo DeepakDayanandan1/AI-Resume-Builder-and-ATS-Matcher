@@ -1,68 +1,113 @@
 """
-AI Service — Google Gemini integration for resume analysis.
+AI Service — LLM integration for resume analysis.
+Supports Groq (primary, higher free limits) and Google Gemini (fallback).
 """
 
 import json
 import asyncio
 import logging
-import google.generativeai as genai
+from groq import Groq
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Global lock ensures only one LLM call runs at a time
+# (prevents 429 rate limit errors when Analyzer, Matcher, Optimizer are used together)
+_llm_lock = asyncio.Lock()
 
-def _get_model():
-    """Initialize and return the Gemini model."""
+# Determine which provider to use
+_provider = "groq" if settings.GROQ_API_KEY else "gemini"
+logger.info(f"AI Service using provider: {_provider}")
+
+
+def _call_groq(prompt: str) -> str:
+    """Call Groq API (Llama 3.3 70B)."""
+    client = Groq(api_key=settings.GROQ_API_KEY)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert ATS scanner and HR professional. Always respond with valid JSON only, no markdown code blocks.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.3,
+        max_tokens=4096,
+        response_format={"type": "json_object"},
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _call_gemini(prompt: str) -> str:
+    """Call Google Gemini API."""
+    import google.generativeai as genai
+
     genai.configure(api_key=settings.GEMINI_API_KEY)
-    return genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content(prompt)
+    text = response.text.strip()
+
+    # Clean up response - remove markdown code blocks if present
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+
+    return text
 
 
-async def _call_gemini_with_retry(prompt: str, max_retries: int = 3) -> str:
-    """Call Gemini API with exponential backoff retry for rate limits."""
-    model = _get_model()
+async def _call_llm_with_retry(prompt: str, max_retries: int = 3) -> str:
+    """Call LLM API with exponential backoff retry for rate limits.
 
-    for attempt in range(max_retries):
-        try:
-            response = model.generate_content(prompt)
-            text = response.text.strip()
+    Uses a global lock to ensure only one call runs at a time,
+    preventing 429 errors when multiple tools are used simultaneously.
+    """
+    async with _llm_lock:
+        call_fn = _call_groq if _provider == "groq" else _call_gemini
 
-            # Clean up response - remove markdown code blocks if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1]
-                if text.endswith("```"):
-                    text = text[:-3]
-                text = text.strip()
+        for attempt in range(max_retries):
+            try:
+                # Run synchronous LLM call in a thread to avoid blocking
+                text = await asyncio.to_thread(call_fn, prompt)
+                return text
+            except Exception as e:
+                error_msg = str(e)
+                logger.warning(
+                    f"LLM API ({_provider}) attempt {attempt + 1}/{max_retries} failed: {error_msg}"
+                )
 
-            return text
-        except Exception as e:
-            error_msg = str(e)
-            logger.warning(f"Gemini API attempt {attempt + 1}/{max_retries} failed: {error_msg}")
+                # Check if it's a rate limit error
+                if any(
+                    kw in error_msg.lower()
+                    for kw in ["429", "quota", "rate", "resource", "limit"]
+                ):
+                    if attempt < max_retries - 1:
+                        wait_time = (2 ** attempt) * 5  # 5s, 10s, 20s
+                        logger.info(
+                            f"Rate limited. Waiting {wait_time}s before retry..."
+                        )
+                        await asyncio.sleep(wait_time)
+                        continue
 
-            # Check if it's a rate limit (429) error
-            if "429" in error_msg or "quota" in error_msg.lower() or "rate" in error_msg.lower():
-                if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) * 3  # 3s, 6s, 12s
-                    logger.info(f"Rate limited. Waiting {wait_time}s before retry...")
-                    await asyncio.sleep(wait_time)
-                    continue
+                # For non-rate-limit errors or final attempt, raise
+                raise
 
-            # For non-rate-limit errors or final attempt, raise
-            raise
-
-    raise Exception("Max retries exceeded for Gemini API call")
+        raise Exception("Max retries exceeded for LLM API call")
 
 
 def _parse_json_response(text: str, fallback: dict) -> dict:
-    """Parse JSON response from Gemini, return fallback on failure."""
+    """Parse JSON response from LLM, return fallback on failure."""
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        logger.error(f"Failed to parse Gemini response as JSON: {text[:200]}")
+        logger.error(f"Failed to parse LLM response as JSON: {text[:200]}")
         return fallback
 
 
 async def analyze_resume_ats(resume_text: str) -> dict:
-    """Analyze a resume for ATS compatibility using Gemini."""
+    """Analyze a resume for ATS compatibility using AI."""
 
     prompt = f"""You are an expert ATS (Applicant Tracking System) scanner and HR professional.
 Analyze the following resume text and provide a detailed ATS analysis.
@@ -104,7 +149,7 @@ Score criteria:
 - Overall formatting and readability: 15%
 """
 
-    text = await _call_gemini_with_retry(prompt)
+    text = await _call_llm_with_retry(prompt)
 
     return _parse_json_response(text, {
         "ats_score": 0,
@@ -120,7 +165,7 @@ Score criteria:
 async def match_resume_to_job(
     resume_text: str, job_title: str, job_description: str
 ) -> dict:
-    """Compare a resume against a job description using Gemini."""
+    """Compare a resume against a job description using AI."""
 
     prompt = f"""You are an expert ATS scanner and recruiter.
 Compare the following resume against the job description and provide a detailed match analysis.
@@ -151,7 +196,7 @@ Return a JSON object with EXACTLY this structure (no markdown, no code blocks, j
 }}
 """
 
-    text = await _call_gemini_with_retry(prompt)
+    text = await _call_llm_with_retry(prompt)
 
     return _parse_json_response(text, {
         "match_score": 0,
@@ -169,7 +214,7 @@ Return a JSON object with EXACTLY this structure (no markdown, no code blocks, j
 async def optimize_resume(
     resume_text: str, job_title: str, job_description: str
 ) -> dict:
-    """Generate optimization suggestions using Gemini."""
+    """Generate optimization suggestions using AI."""
 
     prompt = f"""You are an expert resume optimizer and career coach.
 Analyze the following resume in context of the job description and provide optimization suggestions.
@@ -218,7 +263,7 @@ Focus on:
 5. Project descriptions that could highlight relevant technologies
 """
 
-    text = await _call_gemini_with_retry(prompt)
+    text = await _call_llm_with_retry(prompt)
 
     return _parse_json_response(text, {
         "current_score": 0,
