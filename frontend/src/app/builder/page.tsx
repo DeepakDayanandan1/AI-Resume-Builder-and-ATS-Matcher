@@ -170,7 +170,7 @@ export default function BuilderPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex flex-wrap h-auto gap-1 bg-white/5 p-1 mb-6">
+          <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-white/5 p-1 mb-6">
             {tabItems.map((t) => {
               const Icon = t.icon;
               return (
