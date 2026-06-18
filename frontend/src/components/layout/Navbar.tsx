@@ -60,7 +60,7 @@ export default function Navbar() {
             <Zap className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent hidden sm:block">
-            ResumeAI
+            Drafted
           </span>
         </Link>
 

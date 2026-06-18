@@ -14,11 +14,11 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Zap className="h-6 w-6 text-cyan-500 fill-cyan-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">
-                Resume<span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">AI</span>
+                Drafted
               </span>
             </div>
             <p className="text-sm font-semibold text-white/90">
-              AI-Powered Resume Intelligence.
+              Build. Match. Get Hired.
             </p>
             <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
               Build professional resumes, analyze ATS compatibility, match against job descriptions, and get AI-powered optimization suggestions. Tailor your resume for every opportunity to beat the ATS systems and impress recruiters.
@@ -61,7 +61,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-muted-foreground">
           <div className="text-center md:text-left">
-            © {new Date().getFullYear()} ResumeAI. All rights reserved.
+            © {new Date().getFullYear()} Drafted. All rights reserved.
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <a href="#" className="hover:text-white transition-colors duration-200">Terms & Conditions</a>

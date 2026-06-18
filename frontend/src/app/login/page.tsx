@@ -81,7 +81,7 @@ export default function LoginPage() {
               <Zap className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-              ResumeAI
+              Drafted
             </span>
           </Link>
         </div>
@@ -93,7 +93,7 @@ export default function LoginPage() {
               {isLogin ? "Welcome back" : "Create an account"}
             </CardTitle>
             <CardDescription className="text-center text-slate-400">
-              {isLogin ? "Enter your credentials to access your dashboard" : "Get started with your free ResumeAI account"}
+              {isLogin ? "Enter your credentials to access your dashboard" : "Get started with your free Drafted account"}
             </CardDescription>
           </CardHeader>
           <CardContent>

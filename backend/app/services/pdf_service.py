@@ -51,21 +51,15 @@ def get_available_templates() -> list[dict]:
     """Return list of available resume templates."""
     return [
         {
-            "id": "professional",
-            "name": "Professional",
-            "description": "Clean, traditional layout perfect for corporate roles",
-            "preview_color": "#1e40af",
+            "id": "template_1",
+            "name": "Template 1",
+            "description": "Clean corporate style",
+            "preview_color": "#323232",
         },
         {
-            "id": "modern",
-            "name": "Modern",
-            "description": "Contemporary design with accent colors and icons",
-            "preview_color": "#7c3aed",
-        },
-        {
-            "id": "minimal",
-            "name": "Minimal",
-            "description": "Simple, elegant layout that lets your content shine",
-            "preview_color": "#059669",
-        },
+            "id": "template_2",
+            "name": "Template 2",
+            "description": "Elegant Helvetica corporate style",
+            "preview_color": "#000000",
+        }
     ]

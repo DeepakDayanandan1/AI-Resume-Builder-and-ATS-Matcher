@@ -4,6 +4,7 @@ export interface PersonalInfo {
   name: string;
   email: string;
   phone: string;
+  location?: string;
   linkedin: string;
   github: string;
   website: string;
@@ -133,6 +134,7 @@ export const defaultResume: ResumeData = {
     name: "",
     email: "",
     phone: "",
+    location: "",
     linkedin: "",
     github: "",
     website: "",
@@ -143,5 +145,5 @@ export const defaultResume: ResumeData = {
   experience: [],
   projects: [],
   certifications: [],
-  template_id: "professional",
+  template_id: "template_1",
 };

@@ -16,18 +16,26 @@ import {
 } from "lucide-react";
 import type { ResumeData, Education, Experience, Project, SkillCategory, Certification } from "@/types";
 import { defaultResume } from "@/types";
-import { createResume, generatePDFPreview } from "@/lib/api";
+import { createResume, generatePDFPreview, renderResumeHTML } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const templates = [
-  { id: "professional", name: "Professional", color: "from-blue-600 to-blue-800", desc: "Clean corporate style" },
-  { id: "modern", name: "Modern", color: "from-purple-600 to-purple-800", desc: "Sidebar layout with accents" },
-  { id: "minimal", name: "Minimal", color: "from-emerald-600 to-emerald-800", desc: "Simple & elegant" },
+  { id: "template_1", name: "Template 1", image: "/Template1.png", desc: "Elegant LaTeX corporate style" },
+  { id: "template_2", name: "Template 2", image: "/Template2.png", desc: "Elegant Helvetica corporate style" }
 ];
 
 export default function BuilderPage() {
   const [resume, setResume] = useState<ResumeData>({ ...defaultResume });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const updatePersonal = (field: string, value: string) => {
     setResume((r) => ({ ...r, personal_info: { ...r.personal_info, [field]: value } }));
@@ -129,6 +137,20 @@ export default function BuilderPage() {
     }
   };
 
+  const handlePreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const html = await renderResumeHTML(resume);
+      setPreviewHtml(html);
+      setPreviewOpen(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load preview";
+      toast.error(message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -191,6 +213,7 @@ export default function BuilderPage() {
                 <div><Label>Full Name</Label><Input value={resume.personal_info.name} onChange={(e) => updatePersonal("name", e.target.value)} placeholder="John Doe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>Email</Label><Input value={resume.personal_info.email} onChange={(e) => updatePersonal("email", e.target.value)} placeholder="john@example.com" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>Phone</Label><Input value={resume.personal_info.phone} onChange={(e) => updatePersonal("phone", e.target.value)} placeholder="+91 98765 43210" className="mt-1 bg-white/5 border-white/10" /></div>
+                <div><Label>Location</Label><Input value={resume.personal_info.location || ""} onChange={(e) => updatePersonal("location", e.target.value)} placeholder="New York, NY" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>LinkedIn</Label><Input value={resume.personal_info.linkedin} onChange={(e) => updatePersonal("linkedin", e.target.value)} placeholder="linkedin.com/in/johndoe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>GitHub</Label><Input value={resume.personal_info.github} onChange={(e) => updatePersonal("github", e.target.value)} placeholder="github.com/johndoe" className="mt-1 bg-white/5 border-white/10" /></div>
                 <div><Label>Website</Label><Input value={resume.personal_info.website} onChange={(e) => updatePersonal("website", e.target.value)} placeholder="johndoe.com" className="mt-1 bg-white/5 border-white/10" /></div>
@@ -243,16 +266,15 @@ export default function BuilderPage() {
                       <div><Label>Start Date</Label><Input value={exp.start_date} onChange={(e) => updateExperience(i, "start_date", e.target.value)} placeholder="Jan 2023" className="mt-1 bg-white/5 border-white/10" /></div>
                       <div><Label>End Date</Label><Input value={exp.end_date} onChange={(e) => updateExperience(i, "end_date", e.target.value)} placeholder="Present" className="mt-1 bg-white/5 border-white/10" /></div>
                     </div>
-                    <div><Label>Description</Label><Textarea value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} placeholder="Brief role description..." rows={2} className="mt-1 bg-white/5 border-white/10" /></div>
                     <div>
-                      <Label>Highlights / Achievements</Label>
+                      <Label>Description (Bullet Points)</Label>
                       {exp.highlights.map((h, hi) => (
                         <div key={hi} className="flex gap-2 mt-1">
                           <Input value={h} onChange={(e) => { const hl = [...exp.highlights]; hl[hi] = e.target.value; updateExperience(i, "highlights", hl); }} placeholder="Achieved X by doing Y..." className="bg-white/5 border-white/10" />
                           <Button size="icon" variant="ghost" onClick={() => { const hl = exp.highlights.filter((_, idx) => idx !== hi); updateExperience(i, "highlights", hl); }} className="shrink-0 text-red-400 h-9 w-9"><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       ))}
-                      <Button size="sm" variant="ghost" onClick={() => updateExperience(i, "highlights", [...exp.highlights, ""])} className="mt-2 text-xs text-cyan-400"><Plus className="h-3 w-3 mr-1" />Add Highlight</Button>
+                      <Button size="sm" variant="ghost" onClick={() => updateExperience(i, "highlights", [...exp.highlights, ""])} className="mt-2 text-xs text-cyan-400"><Plus className="h-3 w-3 mr-1" />Add Point</Button>
                     </div>
                   </div>
                 ))}
@@ -294,12 +316,20 @@ export default function BuilderPage() {
                 {resume.projects.map((proj, i) => (
                   <div key={i} className="rounded-lg border border-white/10 p-4 space-y-3 bg-white/[0.02]">
                     <div className="flex justify-between items-center"><Badge variant="secondary">#{i + 1}</Badge><Button size="icon" variant="ghost" onClick={() => removeProject(i)} className="h-7 w-7 text-red-400"><Trash2 className="h-3.5 w-3.5" /></Button></div>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3">
                       <div><Label>Project Name</Label><Input value={proj.name} onChange={(e) => updateProject(i, "name", e.target.value)} placeholder="My Project" className="mt-1 bg-white/5 border-white/10" /></div>
-                      <div><Label>URL</Label><Input value={proj.url} onChange={(e) => updateProject(i, "url", e.target.value)} placeholder="github.com/..." className="mt-1 bg-white/5 border-white/10" /></div>
                     </div>
-                    <div><Label>Description</Label><Textarea value={proj.description} onChange={(e) => updateProject(i, "description", e.target.value)} rows={2} placeholder="Brief project description..." className="mt-1 bg-white/5 border-white/10" /></div>
                     <div><Label className="text-xs text-muted-foreground">Tech Stack (comma-separated)</Label><Input value={proj.tech_stack.join(", ")} onChange={(e) => updateProject(i, "tech_stack", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="React, Node.js, PostgreSQL" className="mt-1 bg-white/5 border-white/10" /></div>
+                    <div>
+                      <Label>Description (Bullet Points)</Label>
+                      {proj.highlights?.map((h, hi) => (
+                        <div key={hi} className="flex gap-2 mt-1">
+                          <Input value={h} onChange={(e) => { const hl = [...proj.highlights]; hl[hi] = e.target.value; updateProject(i, "highlights", hl); }} placeholder="Built feature X to solve problem Y..." className="bg-white/5 border-white/10" />
+                          <Button size="icon" variant="ghost" onClick={() => { const hl = proj.highlights.filter((_, idx) => idx !== hi); updateProject(i, "highlights", hl); }} className="shrink-0 text-red-400 h-9 w-9"><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      ))}
+                      <Button size="sm" variant="ghost" onClick={() => updateProject(i, "highlights", [...(proj.highlights || []), ""])} className="mt-2 text-xs text-cyan-400"><Plus className="h-3 w-3 mr-1" />Add Point</Button>
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -335,12 +365,14 @@ export default function BuilderPage() {
             <Card className="border-white/10 bg-white/5">
               <CardHeader><CardTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-cyan-500" />Select Template</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 max-w-3xl">
                   {templates.map((t) => (
-                    <button key={t.id} onClick={() => setResume((r) => ({ ...r, template_id: t.id }))} className={`rounded-xl border p-4 text-left transition-all ${resume.template_id === t.id ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
-                      <div className={`h-24 rounded-lg bg-gradient-to-br ${t.color} mb-3`} />
-                      <div className="font-semibold text-sm">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{t.desc}</div>
+                    <button key={t.id} onClick={() => setResume((r) => ({ ...r, template_id: t.id }))} className={`rounded-xl border p-4 text-left transition-all flex flex-col ${resume.template_id === t.id ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
+                      <div className="h-44 w-full rounded-lg overflow-hidden bg-zinc-950 mb-3 border border-white/5 relative flex items-center justify-center">
+                        <img src={t.image} alt={t.name} className="w-full h-full object-cover object-top" />
+                      </div>
+                      <div className="font-semibold text-sm mt-1">{t.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{t.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -351,6 +383,10 @@ export default function BuilderPage() {
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-end">
+          <Button variant="outline" onClick={handlePreview} disabled={previewLoading || loading} size="lg" className="gap-2 border-white/20 bg-white/5 hover:bg-white/10 text-cyan-400 border-cyan-500/20 hover:border-cyan-500/40">
+            {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+            Preview Resume
+          </Button>
           <Button variant="outline" onClick={handleSave} disabled={loading} size="lg" className="gap-2 border-white/20">
             <Save className="h-4 w-4" /> Save Resume
           </Button>
@@ -360,6 +396,23 @@ export default function BuilderPage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl sm:max-w-5xl w-[95vw] h-[90vh] bg-zinc-950/95 backdrop-blur-xl border border-white/10 text-white flex flex-col p-6 rounded-2xl shadow-2xl overflow-hidden">
+          <DialogHeader className="flex flex-row items-center justify-between border-b border-white/10 pb-4 shrink-0">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Eye className="h-5 w-5 text-cyan-400" /> Resume Preview ({templates.find(t => t.id === resume.template_id)?.name})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 w-full overflow-hidden relative bg-white rounded-lg mt-4 min-h-[50vh]">
+            <iframe
+              srcDoc={previewHtml}
+              className="w-full h-full border-none"
+              title="Resume Preview"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -8,6 +8,7 @@ class PersonalInfo(BaseModel):
     name: str = ""
     email: str = ""
     phone: str = ""
+    location: str = ""
     linkedin: str = ""
     github: str = ""
     website: str = ""

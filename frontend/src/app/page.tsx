@@ -111,7 +111,7 @@ export default function HomePage() {
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-400">
               <Zap className="h-3.5 w-3.5" />
-              AI-Powered Resume Intelligence
+              Build. Match. Get Hired.
             </div>
           </motion.div>
 

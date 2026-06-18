@@ -16,9 +16,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ResumeAI — AI Resume Builder & ATS Matcher",
+  title: "Drafted — Build. Match. Get Hired.",
   description:
     "Build professional resumes, analyze ATS compatibility, match against job descriptions, and get AI-powered optimization suggestions.",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
