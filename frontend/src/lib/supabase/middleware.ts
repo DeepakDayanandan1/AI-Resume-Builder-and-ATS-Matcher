@@ -35,7 +35,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect feature routes
+  // Protect feature routes (Disabled by user request)
+  /*
   const protectedRoutes = ['/builder', '/analyzer', '/matcher', '/optimizer'];
   const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route));
 
@@ -46,6 +47,7 @@ export async function updateSession(request: NextRequest) {
     // url.searchParams.set('next', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
+  */
 
   return supabaseResponse;
 }
