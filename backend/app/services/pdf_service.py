@@ -12,35 +12,45 @@ TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templat
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
 
-async def render_resume_html(resume_data: dict, template_id: str = "professional") -> str:
+async def render_resume_html(resume_data: dict, template_id: str = "template_1") -> str:
     """Render resume data into HTML using the specified template."""
     template_file = f"{template_id}.html"
 
     try:
         template = jinja_env.get_template(template_file)
     except Exception:
-        # Fallback to professional template
-        template = jinja_env.get_template("professional.html")
+        # Fallback to template_1 template
+        template = jinja_env.get_template("template_1.html")
 
     return template.render(resume=resume_data)
 
 
 async def generate_pdf_bytes(html_content: str) -> bytes:
-    """Convert HTML string to PDF bytes using WeasyPrint."""
-    try:
-        # pyrefly: ignore [missing-import]
-        from weasyprint import HTML
+    """Convert HTML string to PDF bytes using headless Chromium (Playwright)."""
+    from playwright.async_api import async_playwright
 
-        pdf_bytes = HTML(string=html_content, base_url=TEMPLATE_DIR).write_pdf()
-        return pdf_bytes
-    except ImportError:
-        # Fallback: if WeasyPrint is not available, return a simple error
-        raise RuntimeError(
-            "WeasyPrint is not installed. Install it with: pip install weasyprint"
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context()
+        page = await context.new_page()
+        
+        # Load the HTML content directly
+        await page.set_content(html_content)
+        
+        # Wait for all resources and web fonts to finish loading
+        await page.wait_for_load_state("networkidle")
+        
+        # Print to A4 PDF with 0 margins to respect the template design margins
+        pdf_bytes = await page.pdf(
+            format="A4",
+            print_background=True,
+            margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"}
         )
+        await browser.close()
+        return pdf_bytes
 
 
-async def generate_resume_pdf(resume_data: dict, template_id: str = "professional") -> bytes:
+async def generate_resume_pdf(resume_data: dict, template_id: str = "template_1") -> bytes:
     """Full pipeline: render HTML template with data, then convert to PDF."""
     html = await render_resume_html(resume_data, template_id)
     pdf_bytes = await generate_pdf_bytes(html)

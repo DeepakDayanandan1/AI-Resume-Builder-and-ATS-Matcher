@@ -130,8 +130,42 @@ export default function BuilderPage() {
       URL.revokeObjectURL(url);
       toast.success("PDF downloaded successfully!");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate PDF";
-      toast.error(message);
+      console.warn("Backend PDF generation failed, falling back to browser print...", err);
+      try {
+        const html = await renderResumeHTML(resume);
+        
+        // Create a temporary off-screen iframe
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.left = "-9999px";
+        iframe.style.top = "0";
+        iframe.style.width = "210mm";
+        iframe.style.height = "297mm";
+        iframe.style.border = "none";
+        document.body.appendChild(iframe);
+        
+        // Write the HTML content directly
+        iframe.contentWindow?.document.open();
+        iframe.contentWindow?.document.write(html);
+        iframe.contentWindow?.document.close();
+        
+        // Wait for fonts and styles to resolve inside the iframe
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // Trigger the browser's native print interface
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        
+        // Clean up the iframe from the DOM
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 3000);
+        
+        toast.success("Print dialog opened. Select 'Save as PDF' to save your resume!");
+      } catch (fallbackErr: unknown) {
+        const message = fallbackErr instanceof Error ? fallbackErr.message : "Failed to generate PDF";
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -238,7 +272,7 @@ export default function BuilderPage() {
                       <div><Label>Institution</Label><Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} placeholder="MIT" className="mt-1 bg-white/5 border-white/10" /></div>
                       <div><Label>Degree</Label><Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} placeholder="B.Tech" className="mt-1 bg-white/5 border-white/10" /></div>
                       <div><Label>Field of Study</Label><Input value={edu.field} onChange={(e) => updateEducation(i, "field", e.target.value)} placeholder="Computer Science" className="mt-1 bg-white/5 border-white/10" /></div>
-                      <div><Label>GPA</Label><Input value={edu.gpa} onChange={(e) => updateEducation(i, "gpa", e.target.value)} placeholder="3.8/4.0" className="mt-1 bg-white/5 border-white/10" /></div>
+                      <div><Label>GPA</Label><Input value={edu.gpa} onChange={(e) => updateEducation(i, "gpa", e.target.value)} placeholder="8.5" className="mt-1 bg-white/5 border-white/10" /></div>
                       <div><Label>Start Date</Label><Input value={edu.start_date} onChange={(e) => updateEducation(i, "start_date", e.target.value)} placeholder="Aug 2020" className="mt-1 bg-white/5 border-white/10" /></div>
                       <div><Label>End Date</Label><Input value={edu.end_date} onChange={(e) => updateEducation(i, "end_date", e.target.value)} placeholder="May 2024" className="mt-1 bg-white/5 border-white/10" /></div>
                     </div>
@@ -392,7 +426,7 @@ export default function BuilderPage() {
           </Button>
           <Button onClick={handleDownloadPDF} disabled={loading} size="lg" className="gap-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg shadow-cyan-500/20">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Download PDF
+            Download Resume
           </Button>
         </div>
       </div>

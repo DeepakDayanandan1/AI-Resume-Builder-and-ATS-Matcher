@@ -132,3 +132,27 @@ async def render_html_preview(resume: ResumeCreate):
         return HTMLResponse(content=html)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"HTML rendering failed: {str(e)}")
+
+
+@router.post("/generate-pdf")
+async def generate_pdf(resume: ResumeCreate):
+    """Generate resume PDF from data using Playwright backend."""
+    resume_data = {
+        "personal_info": resume.personal_info.model_dump(),
+        "education": [e.model_dump() for e in resume.education],
+        "skills": [s.model_dump() for s in resume.skills],
+        "experience": [e.model_dump() for e in resume.experience],
+        "projects": [p.model_dump() for p in resume.projects],
+        "certifications": [c.model_dump() for c in resume.certifications],
+    }
+
+    try:
+        from app.services.pdf_service import generate_resume_pdf
+        pdf_bytes = await generate_resume_pdf(resume_data, resume.template_id)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=resume.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
