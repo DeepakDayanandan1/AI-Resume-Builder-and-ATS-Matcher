@@ -121,6 +121,13 @@ export default function BuilderPage() {
   const handleDownloadPDF = async () => {
     setLoading(true);
     try {
+      // Auto-save the resume progress to the database
+      try {
+        await createResume(resume);
+      } catch (saveErr) {
+        console.error("Auto-save failed:", saveErr);
+      }
+
       const blob = await generatePDFPreview(resume);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -128,7 +135,7 @@ export default function BuilderPage() {
       a.download = `${resume.personal_info.name || "resume"}_resume.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("PDF downloaded successfully!");
+      toast.success("PDF downloaded successfully");
     } catch (err: unknown) {
       console.warn("Backend PDF generation failed, falling back to browser print...", err);
       try {
@@ -182,19 +189,6 @@ export default function BuilderPage() {
       toast.error(message);
     } finally {
       setPreviewLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      await createResume(resume);
-      toast.success("Resume saved successfully!");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to save resume";
-      toast.error(message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -420,9 +414,6 @@ export default function BuilderPage() {
           <Button variant="outline" onClick={handlePreview} disabled={previewLoading || loading} size="lg" className="gap-2 border-white/20 bg-white/5 hover:bg-white/10 text-cyan-400 border-cyan-500/20 hover:border-cyan-500/40">
             {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
             Preview Resume
-          </Button>
-          <Button variant="outline" onClick={handleSave} disabled={loading} size="lg" className="gap-2 border-white/20">
-            <Save className="h-4 w-4" /> Save Resume
           </Button>
           <Button onClick={handleDownloadPDF} disabled={loading} size="lg" className="gap-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg shadow-cyan-500/20">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

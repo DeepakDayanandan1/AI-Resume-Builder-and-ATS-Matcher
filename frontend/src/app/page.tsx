@@ -175,7 +175,7 @@ export default function HomePage() {
           >
             {[
               { value: "82%", label: "Avg ATS Score Improvement" },
-              { value: "3", label: "Professional Templates" },
+              { value: "2", label: "Professional Templates" },
               { value: "AI", label: "Powered by Groq" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
