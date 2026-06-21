@@ -27,7 +27,7 @@ app.add_middleware(
         settings.FRONTEND_URL,
         "http://localhost:3000",
         "http://localhost:3001",
-        "https://drafted-gilt.vercel.app",
+        "https://drafted-ats.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
