@@ -18,7 +18,7 @@ Build professional resumes from templates, get instant ATS compatibility scores,
 
 ### 📝 Resume Builder
 - Build resumes with an intuitive form-based interface
-- Choose from **3 professional templates** — Professional, Modern, and Minimal
+- Choose from **2 professional templates** 
 - **Download as PDF** with one click (client-side generation)
 - Save resumes to cloud database (Supabase)
 
