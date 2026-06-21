@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 function SubmitButton({ isLogin, loading }: { isLogin: boolean; loading: boolean }) {
   return (
@@ -52,17 +53,35 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else {
+        toast.success("Welcome back!");
         router.push("/");
         router.refresh();
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setError(error.message);
         setLoading(false);
       } else {
-        router.push("/");
-        router.refresh();
+        // Supabase returns a user with identities=[] when email confirmation is required
+        // and the user hasn't confirmed yet
+        const needsConfirmation =
+          data.user && (!data.user.identities || data.user.identities.length === 0)
+          || (data.user && !data.session);
+
+        if (needsConfirmation) {
+          toast.info("Check your email!", {
+            description:
+              "We've sent a confirmation link to your email address. Please verify your email before signing in.",
+            duration: 8000,
+          });
+          setIsLogin(true);
+          setLoading(false);
+        } else {
+          toast.success("Account created!");
+          router.push("/");
+          router.refresh();
+        }
       }
     }
   }
