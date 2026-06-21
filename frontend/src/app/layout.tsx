@@ -22,6 +22,23 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.svg",
   },
+  openGraph: {
+    title: "Drafted — Build. Match. Get Hired.",
+    description:
+      "Build professional resumes, analyze ATS compatibility, match against job descriptions, and get AI-powered optimization suggestions.",
+    url: "https://drafted-ats.vercel.app",
+    siteName: "Drafted",
+    images: [
+      {
+        url: "frame.png",
+        width: 1200,
+        height: 630,
+        alt: "Drafted Preview",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
