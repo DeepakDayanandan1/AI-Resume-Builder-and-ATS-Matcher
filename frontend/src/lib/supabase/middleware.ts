@@ -6,16 +6,26 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  // If env vars are missing, skip Supabase entirely to avoid timeout
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -31,20 +41,27 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Race the Supabase call against a 3s timeout to avoid Vercel 504s
+  const timeout = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), 3000)
+  );
+
+  try {
+    await Promise.race([supabase.auth.getUser(), timeout]);
+  } catch {
+    // If Supabase call fails, just continue — don't block the page
+  }
 
   // Protect feature routes (Disabled by user request)
   /*
   const protectedRoutes = ['/builder', '/analyzer', '/matcher', '/optimizer'];
-  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    // optionally append the original url as a next query param so they return after login
-    // url.searchParams.set('next', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
   */
