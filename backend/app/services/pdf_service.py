@@ -37,8 +37,14 @@ async def generate_pdf_bytes(html_content: str) -> bytes:
         # Load the HTML content directly
         await page.set_content(html_content)
         
-        # Wait for all resources and web fonts to finish loading
-        await page.wait_for_load_state("networkidle")
+        # Wait for all resources and web fonts to finish loading (with timeout fallback)
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5000)
+        except Exception:
+            try:
+                await page.wait_for_load_state("load", timeout=2000)
+            except Exception:
+                pass
         
         # Print to A4 PDF with 0 margins to respect the template design margins
         pdf_bytes = await page.pdf(

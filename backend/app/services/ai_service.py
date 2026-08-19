@@ -15,16 +15,17 @@ logger = logging.getLogger(__name__)
 # (prevents 429 rate limit errors when Analyzer, Matcher, Optimizer are used together)
 _llm_lock = asyncio.Lock()
 
-# Determine which provider to use
-_provider = "groq" if settings.GROQ_API_KEY else "gemini"
-logger.info(f"AI Service using provider: {_provider}")
+# Determine which providers are configured
+_has_groq = bool(settings.GROQ_API_KEY)
+_has_gemini = bool(settings.GEMINI_API_KEY)
+logger.info(f"AI Service config: Groq available={_has_groq}, Gemini available={_has_gemini}")
 
 
 def _call_groq(prompt: str) -> str:
-    """Call Groq API (Llama 3.3 70B)."""
+    """Call Groq API using configured model (defaults to Llama 3.3 70B)."""
     client = Groq(api_key=settings.GROQ_API_KEY)
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=settings.GROQ_MODEL,
         messages=[
             {
                 "role": "system",
@@ -40,11 +41,11 @@ def _call_groq(prompt: str) -> str:
 
 
 def _call_gemini(prompt: str) -> str:
-    """Call Google Gemini API."""
+    """Call Google Gemini API using configured model (defaults to Gemini 3.6 Flash)."""
     import google.generativeai as genai
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel(settings.GEMINI_MODEL)
     response = model.generate_content(prompt)
     text = response.text.strip()
 
@@ -63,38 +64,57 @@ async def _call_llm_with_retry(prompt: str, max_retries: int = 3) -> str:
 
     Uses a global lock to ensure only one call runs at a time,
     preventing 429 errors when multiple tools are used simultaneously.
+    If Groq is configured but fails, automatically falls back to Gemini.
     """
     async with _llm_lock:
-        call_fn = _call_groq if _provider == "groq" else _call_gemini
+        providers = []
+        if settings.GROQ_API_KEY:
+            providers.append("groq")
+        if settings.GEMINI_API_KEY:
+            providers.append("gemini")
 
-        for attempt in range(max_retries):
-            try:
-                # Run synchronous LLM call in a thread to avoid blocking
-                text = await asyncio.to_thread(call_fn, prompt)
-                return text
-            except Exception as e:
-                error_msg = str(e)
-                logger.warning(
-                    f"LLM API ({_provider}) attempt {attempt + 1}/{max_retries} failed: {error_msg}"
-                )
+        if not providers:
+            raise Exception("No LLM API keys configured. Please set GROQ_API_KEY or GEMINI_API_KEY in .env")
 
-                # Check if it's a rate limit error
-                if any(
-                    kw in error_msg.lower()
-                    for kw in ["429", "quota", "rate", "resource", "limit"]
-                ):
-                    if attempt < max_retries - 1:
-                        wait_time = (2 ** attempt) * 5  # 5s, 10s, 20s
-                        logger.info(
-                            f"Rate limited. Waiting {wait_time}s before retry..."
-                        )
-                        await asyncio.sleep(wait_time)
-                        continue
+        last_error = None
+        for provider in providers:
+            call_fn = _call_groq if provider == "groq" else _call_gemini
+            
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Calling LLM provider: {provider} (attempt {attempt + 1}/{max_retries})...")
+                    # Run synchronous LLM call in a thread to avoid blocking
+                    text = await asyncio.to_thread(call_fn, prompt)
+                    return text
+                except Exception as e:
+                    error_msg = str(e)
+                    last_error = e
+                    logger.warning(
+                        f"LLM API ({provider}) attempt {attempt + 1}/{max_retries} failed: {error_msg}"
+                    )
 
-                # For non-rate-limit errors or final attempt, raise
-                raise
+                    # If this is a model not found / access denied error, do not retry on this provider
+                    if any(kw in error_msg.lower() for kw in ["model_not_found", "does not exist", "no longer available", "404"]):
+                        logger.warning(f"Model error on {provider}. Skipping remaining retries for this provider.")
+                        break
 
-        raise Exception("Max retries exceeded for LLM API call")
+                    # Check if it's a rate limit error
+                    if any(
+                        kw in error_msg.lower()
+                        for kw in ["429", "quota", "rate", "resource", "limit"]
+                    ):
+                        if attempt < max_retries - 1:
+                            wait_time = (2 ** attempt) * 5  # 5s, 10s, 20s
+                            logger.info(
+                                f"Rate limited. Waiting {wait_time}s before retry..."
+                            )
+                            await asyncio.sleep(wait_time)
+                            continue
+
+            logger.warning(f"Provider {provider} failed all attempts/retries. Trying next provider in list.")
+
+        # If all providers failed, raise the last exception
+        raise last_error or Exception("All LLM providers failed")
 
 
 def _parse_json_response(text: str, fallback: dict) -> dict:
