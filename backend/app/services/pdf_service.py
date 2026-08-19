@@ -3,6 +3,7 @@ PDF Generation Service — Generate resume PDFs from HTML templates.
 """
 
 import os
+# pyrefly: ignore [missing-import]
 from jinja2 import Environment, FileSystemLoader
 
 # Template directory
@@ -27,6 +28,7 @@ async def render_resume_html(resume_data: dict, template_id: str = "template_1")
 
 async def generate_pdf_bytes(html_content: str) -> bytes:
     """Convert HTML string to PDF bytes using headless Chromium (Playwright)."""
+    # pyrefly: ignore [missing-import]
     from playwright.async_api import async_playwright
 
     async with async_playwright() as p:

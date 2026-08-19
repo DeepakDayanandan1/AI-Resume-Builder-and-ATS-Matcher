@@ -6,6 +6,7 @@ Supports Groq (primary, higher free limits) and Google Gemini (fallback).
 import json
 import asyncio
 import logging
+# pyrefly: ignore [missing-import]
 from groq import Groq
 from app.config import settings
 
@@ -42,6 +43,7 @@ def _call_groq(prompt: str) -> str:
 
 def _call_gemini(prompt: str) -> str:
     """Call Google Gemini API using configured model (defaults to Gemini 3.6 Flash)."""
+    # pyrefly: ignore [missing-import]
     import google.generativeai as genai
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
